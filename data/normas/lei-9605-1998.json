@@ -866,8 +866,10 @@
    "caminho": "art25.p3",
    "pai": "art25",
    "artigo": "Art. 25",
-   "texto": "Tratando-se de produtos perecíveis ou madeiras, serão estes avaliados e doados a instituições científicas, hospitalares, penais e outras com fins beneficentes. (Renumerando do §2º para §3º pela Lei nº 13.052, de 2014)",
-   "notas": [],
+   "texto": "Tratando-se de produtos perecíveis ou madeiras, serão estes avaliados e doados a instituições científicas, hospitalares, penais e outras com fins beneficentes.",
+   "notas": [
+    "Renumerando do §2º para §3º pela Lei nº 13.052, de 2014"
+   ],
    "estrutura": "CAPÍTULO III – DA APREENSÃO DO PRODUTO E DO INSTRUMENTO DE INFRAÇÃO ADMINISTRATIVA OU DE CRIME"
   },
   {
@@ -877,8 +879,10 @@
    "caminho": "art25.p4",
    "pai": "art25",
    "artigo": "Art. 25",
-   "texto": "Os produtos e subprodutos da fauna não perecíveis serão destruídos ou doados a instituições científicas, culturais ou educacionais. (Renumerando do §3º para §4º pela Lei nº 13.052, de 2014)",
-   "notas": [],
+   "texto": "Os produtos e subprodutos da fauna não perecíveis serão destruídos ou doados a instituições científicas, culturais ou educacionais.",
+   "notas": [
+    "Renumerando do §3º para §4º pela Lei nº 13.052, de 2014"
+   ],
    "estrutura": "CAPÍTULO III – DA APREENSÃO DO PRODUTO E DO INSTRUMENTO DE INFRAÇÃO ADMINISTRATIVA OU DE CRIME"
   },
   {
@@ -888,8 +892,10 @@
    "caminho": "art25.p5",
    "pai": "art25",
    "artigo": "Art. 25",
-   "texto": "Os instrumentos utilizados na prática da infração serão vendidos, garantida a sua descaracterização por meio da reciclagem. (Renumerando do §4º para §5º pela Lei nº 13.052, de 2014)",
-   "notas": [],
+   "texto": "Os instrumentos utilizados na prática da infração serão vendidos, garantida a sua descaracterização por meio da reciclagem.",
+   "notas": [
+    "Renumerando do §4º para §5º pela Lei nº 13.052, de 2014"
+   ],
    "estrutura": "CAPÍTULO III – DA APREENSÃO DO PRODUTO E DO INSTRUMENTO DE INFRAÇÃO ADMINISTRATIVA OU DE CRIME"
   },
   {

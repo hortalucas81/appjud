@@ -25,6 +25,8 @@ export type Anotacao = {
   dispositivo_id: string | null;
   caminho: string;
   conteudo: string;
+  /** Trecho que aparece no caderno; a íntegra (conteudo) fica recolhida. */
+  destaque: string | null;
   fonte: string | null;
   origem: "manual" | "ia";
   criado_em: string;
@@ -37,4 +39,6 @@ export type Sugestao = {
   referencia: string; // "Art. 29, § 1º, III"
   texto: string;
   justificativa: string;
+  /** Trecho do texto colado escolhido pela IA para aparecer no caderno. */
+  destaque: string | null;
 };

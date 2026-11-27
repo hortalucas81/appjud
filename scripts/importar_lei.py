@@ -30,7 +30,7 @@ ORD = r"(?:º|°|o(?![a-z]))"  # "1º", "1°" ou "1 o" (como vem do HTML do Plan
 
 RE_LINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
 RE_NOTA = re.compile(
-    r"\((?:Redação dada|Incluíd[oa]|Acrescid[oa]|Renumerad|Revogad|Vide|Vigência|Regulamento|Promulga|Prejudicad)[^)]*\)",
+    r"\((?:Redação dada|Incluíd[oa]|Acrescid[oa]|Renumera|Revogad|Vide|Vigência|Regulamento|Promulga|Prejudicad)[^)]*\)",
     re.I,
 )
 RE_CAPITULO = re.compile(r"^(TÍTULO|CAPÍTULO|Seção|SEÇÃO|Subseção|SUBSEÇÃO)\s+([IVXLC]+|ÚNIC[AO])\b", re.I)
