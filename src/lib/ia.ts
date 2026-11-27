@@ -22,7 +22,9 @@ Regras:
 - Prefira o dispositivo mais específico (inciso ou parágrafo) quando o trecho tratar exatamente dele; use o artigo (caput) quando o trecho tratar do tipo penal ou da regra geral.
 - Se nenhum candidato for pertinente, devolva lista vazia.
 - A justificativa deve ter no máximo 25 palavras, em português, dizendo por que o trecho se relaciona ao dispositivo.
-- Para cada sugestão, em "destaque", COPIE LITERALMENTE do trecho colado as frases (de 1 a 4, no máximo 90 palavras) que melhor mostram a relação com aquele dispositivo, de preferência a tese ou o fundamento central. Não resuma, não reescreva, não junte frases distantes. Se o trecho colado for curto (até 3 frases), use "" (vazio).
+- Para cada sugestão, em "destaque", COPIE LITERALMENTE do trecho colado de 1 a 3 frases (no máximo 90 palavras) com o ENTENDIMENTO DO TRIBUNAL ou do autor sobre aquele dispositivo: a tese, a ementa ou o fundamento da decisão.
+  Nunca use o relatório, a narrativa dos fatos, a denúncia nem os argumentos das partes ("a defesa sustenta", "o Ministério Público alega", "pede"), salvo se o trecho não tiver nenhuma outra frase sobre o dispositivo.
+  Não resuma, não reescreva, não junte frases distantes. Se o trecho colado for curto (até 3 frases), use "" (vazio).
 Responda somente com JSON no formato: {"sugestoes":[{"n":<número do candidato>,"justificativa":"...","destaque":"..."}]}`;
 
 export function iaConfigurada() {
