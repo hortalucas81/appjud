@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import type { Anotacao, Dispositivo, Norma, Sugestao } from "@/lib/tipos";
 import { criarAnotacoes, editarAnotacao, excluirAnotacao, sugerirDispositivos } from "./actions";
+import { ehLink } from "@/lib/destaque";
 
 /* ------------------------------------------------------------------ */
 /* Painel lateral (gaveta) que abre por cima da página                 */
@@ -21,6 +22,62 @@ export function Gaveta({ titulo, onFechar, children }: { titulo: string; onFecha
         <div className="flex-1 overflow-y-auto px-4 py-4">{children}</div>
       </aside>
     </>
+  );
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Texto da anotação: destaque visível, íntegra recolhida              */
+/* ------------------------------------------------------------------ */
+const LIMITE_SEM_DESTAQUE = 600;
+
+export function Fonte({ fonte }: { fonte: string | null }) {
+  if (!fonte) return null;
+  if (ehLink(fonte)) {
+    let rotulo = "abrir julgado";
+    try {
+      rotulo = `abrir no ${new URL(fonte.trim()).hostname.replace(/^www\./, "")}`;
+    } catch {}
+    return (
+      <a href={fonte.trim()} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-emerald-800 underline hover:text-emerald-950">
+        {rotulo} ↗
+      </a>
+    );
+  }
+  return <span>Fonte: {fonte}</span>;
+}
+
+/**
+ * `expansivel=false` é usado na página do vade mécum: lá a altura de cada coluna é medida,
+ * então a íntegra abre no painel lateral (o clique sobe até o dispositivo).
+ */
+export function TextoAnotacao({ a, expansivel = true }: { a: Pick<Anotacao, "conteudo" | "destaque">; expansivel?: boolean }) {
+  const [aberto, setAberto] = useState(false);
+  const longo = a.conteudo.length > LIMITE_SEM_DESTAQUE;
+  if (!a.destaque && !longo) return <span className="whitespace-pre-wrap">{a.conteudo}</span>;
+  const resumo = a.destaque ? `“${a.destaque}”` : a.conteudo.slice(0, LIMITE_SEM_DESTAQUE).trimEnd() + "…";
+  const paginas = Math.max(1, Math.round(a.conteudo.length / 4000));
+  if (!expansivel) {
+    return (
+      <span className="block">
+        <span className="whitespace-pre-wrap">{resumo}</span>
+        <span className="block text-[0.92em] text-stone-500 underline">{a.destaque ? "ver íntegra" : "ver mais"}</span>
+      </span>
+    );
+  }
+  return (
+    <span className="block">
+      <span className="whitespace-pre-wrap">{aberto ? a.conteudo : resumo}</span>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setAberto(!aberto);
+        }}
+        className="mt-0.5 block text-[0.92em] text-stone-500 underline hover:text-stone-800"
+      >
+        {aberto ? "recolher" : a.destaque ? `ver íntegra (~${paginas} pág.)` : "ver mais"}
+      </button>
+    </span>
   );
 }
 
@@ -164,9 +221,11 @@ export function CartaoAnotacao({
   }
   return (
     <div className="mt-2 rounded-r border-l-4 border-amber-400 bg-amber-50 px-3 py-2 text-sm">
-      <p className="whitespace-pre-wrap text-stone-800">{a.conteudo}</p>
+      <div className="text-stone-800">
+        <TextoAnotacao a={a} />
+      </div>
       <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-stone-500">
-        {a.fonte && <span>Fonte: {a.fonte}</span>}
+        <Fonte fonte={a.fonte} />
         {a.origem === "ia" && <span title="Dispositivo sugerido pela IA e confirmado por você">sugerido por IA</span>}
         <span>{new Date(a.atualizado_em).toLocaleDateString("pt-BR")}</span>
         <button onClick={() => setEditando(true)} className="underline hover:text-stone-800">
@@ -271,7 +330,8 @@ export function PainelSugestao({
   function salvar() {
     setMensagem(null);
     iniciarSalvar(async () => {
-      const r = await criarAnotacoes({ normaId: norma.id, dispositivoIds: [...marcados], conteudo: trecho, fonte, origem: "ia" });
+      const destaques = Object.fromEntries((sugestoes ?? []).map((s) => [s.dispositivo_id, s.destaque]));
+      const r = await criarAnotacoes({ normaId: norma.id, dispositivoIds: [...marcados], conteudo: trecho, destaques, fonte, origem: "ia" });
       if (!r.ok) {
         setMensagem({ tipo: "erro", texto: r.erro });
         return;
@@ -288,7 +348,8 @@ export function PainelSugestao({
   return (
     <div className="space-y-3">
       <p className="text-sm text-stone-600">
-        Cole um julgado, trecho de doutrina ou nota. A IA indica onde anotar e você confirma antes de salvar.
+        Cole um julgado (pode ser o acórdão inteiro), trecho de doutrina ou nota. A IA indica onde anotar e qual trecho
+        fica visível no caderno; a íntegra fica recolhida. Você confirma antes de salvar.
       </p>
       <textarea
         value={trecho}
@@ -301,7 +362,7 @@ export function PainelSugestao({
         value={fonte}
         onChange={(e) => setFonte(e.target.value)}
         className="w-full rounded border border-stone-300 px-2 py-1 text-sm"
-        placeholder="Fonte (opcional): ex.: STJ, AgRg no REsp 1.234.567/SP"
+        placeholder="Fonte ou link do julgado (opcional): ex.: https://processo.stj.jus.br/..."
       />
       <button
         onClick={sugerir}
@@ -334,6 +395,11 @@ export function PainelSugestao({
                     <span className="font-semibold">{s.referencia}</span>
                     <span className="block font-serif text-stone-700">{s.texto.length > 220 ? s.texto.slice(0, 220) + "…" : s.texto}</span>
                     <span className="mt-1 block text-xs text-emerald-800">Por quê: {s.justificativa}</span>
+                    {s.destaque && (
+                      <span className="mt-1 block border-l-2 border-amber-400 bg-amber-50 px-2 py-1 text-xs text-stone-700">
+                        <span className="block font-semibold text-stone-500">No caderno vai aparecer:</span>“{s.destaque}”
+                      </span>
+                    )}
                   </span>
                 </label>
                 <button onClick={() => onVer(s.dispositivo_id)} className="ml-7 mt-1 text-xs text-stone-500 underline">

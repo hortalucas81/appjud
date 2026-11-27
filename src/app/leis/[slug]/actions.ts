@@ -1,13 +1,14 @@
 "use server";
 
 import { usuarioAtual } from "@/lib/supabase/server";
-import { escolherDispositivos, iaConfigurada, type Candidato } from "@/lib/ia";
+import { escolherDispositivos, iaConfigurada, type Candidato, type Escolha, LIMITE_TRECHO_IA } from "@/lib/ia";
+import { validarDestaque } from "@/lib/destaque";
 import { artigosMencionados, referencia } from "@/lib/referencia";
 import type { Anotacao, Sugestao } from "@/lib/tipos";
 
 type Resultado<T> = { ok: true; dados: T } | { ok: false, erro: string };
 
-const CAMPOS_ANOTACAO = "id, dispositivo_id, caminho, conteudo, fonte, origem, criado_em, atualizado_em";
+const CAMPOS_ANOTACAO = "id, dispositivo_id, caminho, conteudo, destaque, fonte, origem, criado_em, atualizado_em";
 
 async function exigirUsuario() {
   const { supabase, user } = await usuarioAtual();
@@ -19,6 +20,8 @@ export async function criarAnotacoes(entrada: {
   normaId: string;
   dispositivoIds: string[];
   conteudo: string;
+  /** Trecho em destaque por dispositivo (vindo da sugestão da IA). */
+  destaques?: Record<string, string | null>;
   fonte?: string;
   origem: "manual" | "ia";
 }): Promise<Resultado<Anotacao[]>> {
@@ -34,6 +37,7 @@ export async function criarAnotacoes(entrada: {
       dispositivo_id: id,
       caminho: "", // preenchido pelo banco
       conteudo,
+      destaque: validarDestaque(entrada.destaques?.[id], conteudo),
       fonte: entrada.fonte?.trim() || null,
       origem: entrada.origem,
     }));
@@ -49,9 +53,11 @@ export async function editarAnotacao(id: string, conteudo: string, fonte: string
   try {
     const { supabase } = await exigirUsuario();
     if (!conteudo.trim()) return { ok: false, erro: "A anotação está vazia." };
+    const { data: atual } = await supabase.from("anotacoes").select("destaque").eq("id", id).maybeSingle();
+    const destaque = validarDestaque(atual?.destaque ?? null, conteudo.trim());
     const { data, error } = await supabase
       .from("anotacoes")
-      .update({ conteudo: conteudo.trim(), fonte: fonte.trim() || null })
+      .update({ conteudo: conteudo.trim(), destaque, fonte: fonte.trim() || null })
       .eq("id", id)
       .select(CAMPOS_ANOTACAO)
       .single();
@@ -140,17 +146,18 @@ export async function sugerirDispositivos(normaId: string, trecho: string): Prom
       };
     });
 
-    let escolhas: { id: string; justificativa: string }[];
+    let escolhas: Escolha[];
     let viaIa = false;
     if (iaConfigurada()) {
       escolhas = await escolherDispositivos(texto, candidatos);
       viaIa = true;
-      await supabase.from("uso_ia").insert({ user_id: user.id, norma_id: normaId, caracteres: texto.length });
+      await supabase.from("uso_ia").insert({ user_id: user.id, norma_id: normaId, caracteres: Math.min(texto.length, LIMITE_TRECHO_IA) });
     } else {
       // Sem chave de IA: devolve os 3 mais parecidos pela busca textual.
       escolhas = candidatos.slice(0, 3).map((c) => ({
         id: c.id,
         justificativa: "Semelhança de termos (IA não configurada: defina GEMINI_API_KEY).",
+        destaque: null,
       }));
     }
 
@@ -163,6 +170,7 @@ export async function sugerirDispositivos(normaId: string, trecho: string): Prom
         referencia: c.referencia,
         texto: d.texto,
         justificativa: e.justificativa,
+        destaque: e.destaque,
       };
     });
     return { ok: true, dados: { sugestoes, viaIa } };

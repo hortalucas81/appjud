@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Anotacao, Dispositivo, Norma } from "@/lib/tipos";
 import { referencia } from "@/lib/referencia";
-import { CartaoAnotacao, Gaveta, PainelDispositivo, PainelSugestao, PainelSumario, type SecaoSumario } from "./Paineis";
+import { CartaoAnotacao, Fonte, Gaveta, TextoAnotacao, PainelDispositivo, PainelSugestao, PainelSumario, type SecaoSumario } from "./Paineis";
 
 /*
  * Leitura em formato de vade mécum: "lei seca" em páginas de duas colunas.
@@ -108,8 +108,13 @@ function TextoDispositivo({
       {mostrarNotas &&
         anotacoes.map((a) => (
           <div key={a.id} className="ml-3 mt-1 border-l-2 border-amber-400 bg-amber-50/70 px-2 py-1 font-sans text-[11.5px] leading-snug text-stone-700">
-            <span className="whitespace-pre-wrap">{a.conteudo}</span>
-            {a.fonte && <span className="text-stone-500"> — {a.fonte}</span>}
+            <TextoAnotacao a={a} expansivel={false} />
+            {a.fonte && (
+              <span className="text-stone-500">
+                {" "}
+                <Fonte fonte={a.fonte} />
+              </span>
+            )}
           </div>
         ))}
     </div>

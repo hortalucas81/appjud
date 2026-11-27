@@ -22,7 +22,7 @@ export default async function PaginaLei({ params }: { params: Promise<{ slug: st
       .order("ordem"),
     supabase
       .from("anotacoes")
-      .select("id, dispositivo_id, caminho, conteudo, fonte, origem, criado_em, atualizado_em")
+      .select("id, dispositivo_id, caminho, conteudo, destaque, fonte, origem, criado_em, atualizado_em")
       .eq("norma_id", norma.id)
       .eq("user_id", user!.id)
       .order("criado_em"),

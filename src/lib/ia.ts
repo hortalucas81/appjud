@@ -1,4 +1,5 @@
 import "server-only";
+import { validarDestaque } from "./destaque";
 
 export type Candidato = {
   id: string;
@@ -8,7 +9,10 @@ export type Candidato = {
   estrutura: string | null;
 };
 
-export type Escolha = { id: string; justificativa: string };
+export type Escolha = { id: string; justificativa: string; destaque: string | null };
+
+/** Até ~15 páginas de acórdão vão para a IA (trava de custo). */
+export const LIMITE_TRECHO_IA = 60000;
 
 const INSTRUCOES = `Você é assistente de um profissional do direito brasileiro que mantém uma lei anotada.
 Ele colou um trecho (julgado, doutrina, nota pessoal ou notícia) e quer saber em qual dispositivo da lei esse trecho deve ser anotado.
@@ -18,7 +22,8 @@ Regras:
 - Prefira o dispositivo mais específico (inciso ou parágrafo) quando o trecho tratar exatamente dele; use o artigo (caput) quando o trecho tratar do tipo penal ou da regra geral.
 - Se nenhum candidato for pertinente, devolva lista vazia.
 - A justificativa deve ter no máximo 25 palavras, em português, dizendo por que o trecho se relaciona ao dispositivo.
-Responda somente com JSON no formato: {"sugestoes":[{"n":<número do candidato>,"justificativa":"..."}]}`;
+- Para cada sugestão, em "destaque", COPIE LITERALMENTE do trecho colado as frases (de 1 a 4, no máximo 90 palavras) que melhor mostram a relação com aquele dispositivo, de preferência a tese ou o fundamento central. Não resuma, não reescreva, não junte frases distantes. Se o trecho colado for curto (até 3 frases), use "" (vazio).
+Responda somente com JSON no formato: {"sugestoes":[{"n":<número do candidato>,"justificativa":"...","destaque":"..."}]}`;
 
 export function iaConfigurada() {
   return Boolean(process.env.GEMINI_API_KEY);
@@ -41,10 +46,10 @@ export async function escolherDispositivos(trecho: string, candidatos: Candidato
     contents: [
       {
         role: "user",
-        parts: [{ text: `TRECHO COLADO:\n"""\n${trecho.slice(0, 6000)}\n"""\n\nCANDIDATOS:\n${lista}` }],
+        parts: [{ text: `TRECHO COLADO:\n"""\n${trecho.slice(0, LIMITE_TRECHO_IA)}\n"""\n\nCANDIDATOS:\n${lista}` }],
       },
     ],
-    generationConfig: { temperature: 0.1, maxOutputTokens: 600, responseMimeType: "application/json" },
+    generationConfig: { temperature: 0.1, maxOutputTokens: 2000, responseMimeType: "application/json" },
   };
 
   const resp = await fetch(
@@ -63,12 +68,12 @@ export async function escolherDispositivos(trecho: string, candidatos: Candidato
   const json = await resp.json();
   const texto: string =
     json?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
-  return interpretar(texto, candidatos);
+  return interpretar(texto, candidatos, trecho);
 }
 
-export function interpretar(texto: string, candidatos: Candidato[]): Escolha[] {
+export function interpretar(texto: string, candidatos: Candidato[], trecho = ""): Escolha[] {
   const bruto = texto.replace(/^```(?:json)?\s*|\s*```$/g, "").trim();
-  let dados: { sugestoes?: { n?: unknown; justificativa?: unknown }[] };
+  let dados: { sugestoes?: { n?: unknown; justificativa?: unknown; destaque?: unknown }[] };
   try {
     dados = JSON.parse(bruto);
   } catch {
@@ -87,7 +92,11 @@ export function interpretar(texto: string, candidatos: Candidato[]): Escolha[] {
     const c = Number.isInteger(n) ? candidatos[n - 1] : undefined;
     if (!c || vistos.has(c.id)) continue;
     vistos.add(c.id);
-    escolhas.push({ id: c.id, justificativa: String(s.justificativa ?? "").slice(0, 300) });
+    escolhas.push({
+      id: c.id,
+      justificativa: String(s.justificativa ?? "").slice(0, 300),
+      destaque: validarDestaque(s.destaque, trecho),
+    });
     if (escolhas.length === 3) break;
   }
   return escolhas;
